@@ -1,0 +1,12 @@
+[Unit]
+Description=Configure CPU power related settings
+After=syslog.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/cpupower frequency-set -g powersave -d "1600MHz" -u "2300MHz"
+ExecStop=/usr/bin/cpupower frequency-set -g performance -d "3800MHz" -u "3800MHz"
+
+[Install]
+WantedBy=multi-user.target

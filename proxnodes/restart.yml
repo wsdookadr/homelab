@@ -1,0 +1,14 @@
+---
+- hosts: all
+  tasks:
+    - name: Switch to root
+      become: true
+      become_user: root
+      block:
+        - name: Test shell
+          shell: |
+            ls /
+        - name: Reboot
+          shell: |
+            systemctl reboot
+

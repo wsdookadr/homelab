@@ -1,0 +1,23 @@
+---
+- name: SSL config
+  hosts: all
+  become: true
+  become_user: root
+  tasks:
+
+    # note 2025-03-18: arch and debian 12 are using p11-kit
+
+    - name: Copy rootCA 
+      synchronize:
+        src: ~/.local/share/mkcert/rootCA.pem
+        dest: /etc/ca-certificates/trust-source/anchors/homelab.pem
+
+    - name: Import into trust store
+      shell: update-ca-trust
+
+    - name: Verify that the store recognizes the certificate
+      shell: openssl verify /etc/ca-certificates/trust-source/anchors/homelab.pem >/dev/null 2>&1
+      register: verify
+      ignore_errors: true
+
+

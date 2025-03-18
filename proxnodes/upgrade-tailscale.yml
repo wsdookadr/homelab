@@ -1,0 +1,26 @@
+---
+# First upgrade for node1 and then for all
+# 
+# ansible-playbook -i inventory upgrade-tailscale.yml --limit node1
+#
+- hosts: all
+  tasks:
+
+    - name: Run "apt-get update"
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Upgrade Tailscale
+      become: true
+      become_user: root
+      apt:
+        name: tailscale
+        state: latest
+
+    - name: Get Tailscale version
+      shell: tailscale version | head -1
+      register: ver
+
+    - name: Print version
+      debug: msg="{{ ver.stdout }}"
+

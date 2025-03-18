@@ -1,0 +1,10 @@
+[Unit]
+Description=Restart Docker stacks
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/restart-docker.sh
+Group=systemd-journal
+
+[Install]
+WantedBy=default.target

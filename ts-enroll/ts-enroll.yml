@@ -1,0 +1,61 @@
+---
+- name: Tailscale setup
+  hosts: all
+  become: true
+  become_user: root
+  vars_files:
+    - vault.yml
+  tasks:
+
+    - name: Compute days since creation of the key
+      set_fact:
+        days_since: "{{ (now() - (tailscale_created | to_datetime('%Y-%m-%d')) ).days | int }}"
+
+    - name: Print days since
+      debug:
+        msg: "{{ days_since }}"
+
+    - name: Check expiry
+      fail:
+        msg: "Less than 5 days until expiry. Go renew the auth key in tailscale https://login.tailscale.com/admin/settings/keys ."
+      when: (days_since | int > 85)
+
+    - name: Install pre-requisites
+      package:
+        name: "{{ item }}"
+        state: latest
+      with_items:
+        - gnupg
+        - ca-certificates
+
+    - name: Add Tailscale repository signing key (Debian/Ubuntu)
+      apt_key:
+        url: https://pkgs.tailscale.com/stable/ubuntu/focal.gpg
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Add Tailscale repository (Debian/Ubuntu)
+      apt_repository:
+        repo: "deb https://pkgs.tailscale.com/stable/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} main"
+        state: present
+        filename: tailscale
+      when: ansible_os_family == "Debian"
+
+    - name: Install Tailscale
+      package:
+        name: tailscale
+        state: present
+
+    - name: Enable systemd service
+      systemd_service:
+        name: tailscaled
+        enabled: true
+        masked: false
+        state: started
+
+      tags: ["s1"]
+
+    - name: Enroll machine in Tailscale
+      shell: "tailscale up --auth-key='{{ tailscale_authkey }}'"
+
+

@@ -1,0 +1,56 @@
+---
+- name: Set up cloud images
+  hosts: all
+  vars:
+    images:
+      - name: debian12-cloudinit
+        path: /home/nas/kits/iso/debian/debian-12-genericcloud-amd64-20250115-1993.qcow2
+      - name: alpine3.21-cloudinit
+        path: /home/nas/kits/iso/alpine/generic_alpine-3.21.2-x86_64-bios-cloudinit-r0.qcow2
+      - name: ubuntu24.04-cloudinit
+        path: /home/nas/kits/iso/ubuntu/ubuntu-24.04-server-cloudimg-amd64.img
+      - name: rocky9.5-cloudinit
+        path: /home/nas/kits/iso/rocky/Rocky-9-GenericCloud-Base-9.5-20241118.0.x86_64.qcow2
+      - name: alpine3.21-nocloud-cloudinit
+        path: /home/nas/kits/iso/alpine/nocloud_alpine-3.21.2-x86_64-bios-cloudinit-r0.qcow2
+      - name: alpine3.21-custom
+        path: /home/nas/kits/iso/custom-qcow2/alpine3.21-cloudinit-fixed.qcow2
+    vmid_n: 0
+    vmid_base: 9000
+    vmid_per_host: 20
+  tasks:
+    - name: Set up NAS mount points (to get the cloud init images)
+      become: true
+      block:
+        - name: Basic packages
+          apt:
+            pkg:
+              - jq
+              - htop
+              - mc
+              - net-tools
+              - fping
+            state: latest
+            update_cache: true
+        - name: Mount shared
+          ansible.posix.mount:
+            src: //192.168.1.100/shared-space
+            path: /home/nas/shared
+            opts: "rw,vers=2.0,username=guest,password=,dir_mode=0775,file_mode=0775,uid=1000,gid=9999"
+            fstype: cifs
+            state: mounted
+        - name: Mount kits
+          ansible.posix.mount:
+            src: //192.168.1.100/kits
+            path: /home/nas/kits
+            opts: "rw,vers=2.0,username=guest,password=,dir_mode=0775,file_mode=0775,uid=1000,gid=9999"
+            fstype: cifs
+            state: mounted
+        - name: Mount all
+          command: mount -a
+          become: true
+        - name: Do images
+          include_tasks: "do_image.yml"
+          loop: "{{ images }}"
+
+

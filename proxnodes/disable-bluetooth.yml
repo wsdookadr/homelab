@@ -1,0 +1,38 @@
+# 2025-03-08
+# disable bluetooth on all proxmox nodes
+# https://www.bleepingcomputer.com/news/security/undocumented-backdoor-found-in-bluetooth-chip-used-by-a-billion-devices/
+#
+# Run this to check when the service was started/stopped:
+# journalctl  -o short-full -u bluetooth.target
+
+- name: BT fix
+  hosts: all
+  become: true
+  tasks:
+
+    - name: Mask all bluetooth-related services
+      shell: systemctl --plain --all | grep bluetooth | awk '{print $1}' | xargs -I{} systemctl mask "{}"
+
+    - name: Disable and Stop Bluetooth Service
+      systemd_service:
+        name: bluetooth.target
+        state: stopped
+        enabled: false
+
+    - name: Create modprobe.d directory
+      file:
+        path: "/etc/modprobe.d/"
+        state: directory
+        owner: user
+        group: user
+        mode: '0755'
+
+    # black list kernel module and prevent it from loading at boot-time
+    - name: Blacklist Kernel module for Bluetooth
+      blockinfile:
+        path: /etc/modprobe.d/bluetooth.conf
+        create: true
+        block: |
+          blacklist bluetooth
+          blacklist btusb
+

@@ -1,0 +1,7 @@
+#cloud-config
+runcmd:
+  - apt update
+  - apt install -y qemu-guest-agent openssh-server
+  - systemctl start qemu-guest-agent
+  - systemctl enable ssh
+  - systemctl start ssh

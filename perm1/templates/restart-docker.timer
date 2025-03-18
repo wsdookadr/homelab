@@ -1,0 +1,11 @@
+[Unit]
+Description=Restart Docker stacks
+After=network-online.target
+Requires=restart-docker.service
+
+[Timer]
+OnCalendar=*:0/5
+Unit=restart-docker.service
+
+[Install]
+WantedBy=timers.target

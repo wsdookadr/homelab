@@ -1,0 +1,13 @@
+---
+- hosts: all
+  become: true
+  become_user: root
+  tasks:
+    - name: Run uptime
+      shell: uptime
+      register: uptime
+
+    - name: Print
+      debug: var=uptime.stdout
+
+

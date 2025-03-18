@@ -1,0 +1,28 @@
+---
+- name: Bump vmid_n
+  set_fact:
+    vmid_n: "{{ vmid_n | int + 1 }}"
+- name: Compute vmid
+  set_fact:
+    vmid: "{{ vmid_base | int + ( groups['all'].index(inventory_hostname) * (vmid_per_host | int) ) + (vmid_n | int) }}"
+- debug:
+    msg: "{{ item.name }} -- {{ vmid }} -- {{ item.path }}"
+- name: Check if template name exists
+  shell: |
+    pvesh get /cluster/resources  --output-format json | jq -c -r '.[] | select( (.type=="qemu") and (.node=="{{ ansible_hostname }}") )' |  grep "{{ item.name }}" | wc -l
+  register: dupe_check
+- debug:
+    msg: "Template [ {{ item.name }} ] already exists on [ {{ inventory_hostname }} ]"
+  when: dupe_check.stdout | int > 0
+- name: Set up template
+  block:
+    - name: Create VM
+      shell: "qm create {{ vmid }} --name {{ item.name }}"
+    - name: Import disk
+      shell: "qm set {{ vmid }} --scsi0 local-zfs:0,import-from={{ item.path }}"
+    - name: Convert to template
+      shell: "qm template {{ vmid }}"
+  rescue:
+    - name: Remove VM
+      shell: "qm destroy {{ vmid }} --purge --destroy-unreferenced-disks=1"
+  when: dupe_check.stdout | int == 0

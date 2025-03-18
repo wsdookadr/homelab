@@ -1,0 +1,24 @@
+- name: Run hw-probe on all nodes
+  hosts: all
+  become: true
+  become_user: root
+  tasks:
+
+    - name: Download hw-probe
+      shell: wget -O hw-probe.AppImage --continue https://github.com/linuxhw/hw-probe/releases/download/1.6/hw-probe-1.6.5-189-x86_64.AppImage
+
+    - name: Permissions
+      shell: chmod +x hw-probe.AppImage
+
+    - name: Run hw-probe
+      shell: ./hw-probe.AppImage -all -upload | grep http
+      register: hwprobe
+
+    - name: Print probe link
+      debug:
+        msg: "{{ hwprobe.stdout }}"
+
+    - name: Remove binary
+      shell: rm -f hw-probe.AppImage
+
+

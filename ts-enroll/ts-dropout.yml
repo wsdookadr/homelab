@@ -1,0 +1,20 @@
+---
+- name: Drop out
+  hosts: all
+  become: true
+  become_user: root
+  vars_files:
+    - vault.yml
+  tasks:
+
+    - name: Log out Tailscale
+      shell: "tailscale logout"
+
+    - name: Disable and mask service
+      systemd_service:
+        name: tailscaled
+        enabled: false
+        masked: true
+        state: stopped
+
+

@@ -1,0 +1,11 @@
+[Unit]
+Description=Samba Docker Fix
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/samba-docker-fix.sh
+User=root
+Group=systemd-journal
+
+[Install]
+WantedBy=default.target

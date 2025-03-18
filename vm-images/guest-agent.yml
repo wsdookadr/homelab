@@ -1,0 +1,9 @@
+---
+- name:
+  hosts: all
+  tasks:
+    - name: Distribute cloud init snippet everywhere
+      synchronize:
+        src: ./templates/qemu-guest-agent.yml
+        dest: /var/lib/vz/snippets/qemu-guest-agent.yml
+

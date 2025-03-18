@@ -1,0 +1,9 @@
+---
+- hosts: all
+  tasks:
+    - name: Schedule rtcwake
+      become: true
+      become_user: root
+      shell: |
+        rtcwake -m mem -s {{ 20 * 60 }}
+

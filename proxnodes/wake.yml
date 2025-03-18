@@ -1,0 +1,10 @@
+---
+- name: Wake up machines
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: "Wake up"
+      shell: 'wakeonlan {{wol_mac}}'
+      delegate_to: localhost
+      with_sequence: count=30
+

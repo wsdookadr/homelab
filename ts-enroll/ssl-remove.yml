@@ -1,0 +1,56 @@
+---
+- name: Remove SSL rootCA
+  hosts: all
+  become: true
+  become_user: root
+  tasks:
+
+    - name: Copy rootCA 
+      synchronize:
+        src: ~/.local/share/mkcert/rootCA.pem
+        dest: /tmp/rootCA.pem
+
+    - name: Compute MD5 of rootCA.pem
+      shell: md5sum /tmp/rootCA.pem | awk '{print $1}'
+      register: cert_md5
+
+    - name: Compute PKCS#11 URI
+      shell: |
+        openssl x509 -in /tmp/rootCA.pem -noout -pubkey | \
+        openssl rsa -pubin -outform DER 2>/dev/null | \
+        openssl dgst -sha1 -binary | \
+        od -A n -t x1 | tr -d ' \n' | sed 's/\(..\)/%\1/g' | sed -e 's/^/pkcs11:id=/; s/$/;type=cert\n/;'
+      register: pkcs_uri
+
+    - name: Print PKCS URI
+      debug: msg="{{pkcs_uri.stdout}}"
+
+    - name: Remove certificate from rust store
+      shell: trust anchor --remove "{{ pkcs_uri.stdout }}"
+
+    - name: Remove from trust store by checksum
+      shell: find /etc/ca-certificates/trust-source/anchors/ -type f -exec md5sum {} + | grep {{ cert_md5.stdout }} | awk '{ print $2 }' | xargs -I{} rm -f "{}"
+
+    - name: Remove from trust store by PKCS#11 URI (fingerprint)
+      shell: trust anchor --remove "{{ pkcs_uri.stdout }}"
+
+    - name: Update trust store
+      shell: update-ca-trust
+
+    - name: Check that OpenSSL doesn't recognize the certificate anymore
+      shell: openssl verify /tmp/rootCA.pem >/dev/null 2>&1
+      register: verify
+      ignore_errors: true
+      failed_when: false
+
+    - name: Print openssl verification stdout
+      debug:
+        msg: "{{ verify.stdout }}"
+
+    - name: Check exit code of openssl
+      fail:
+      when: verify.rc == 0
+
+
+
+

@@ -20,6 +20,7 @@ perm1 hosts the basic web apps used within the homelab.
 In decreasing order of importance, the services running on this VM:
 
 * dokuwiki
+* vaultwarden
 * adguardhome
 * gitea
 * homebox
